@@ -5,7 +5,8 @@ import {
     GET_EMP_REQUEST,
     GET_EMP_SUCCESS,
     ADD_EMP_REQUEST,
-    UPDATE_EMP_REQUEST
+    UPDATE_EMP_REQUEST,
+    ADD_ROW_EMPLOYEE
 } from '../../common/Constant'
 
 const initalState = {
@@ -43,6 +44,12 @@ function empReducer(state = initalState, action){
             return {
                 ...state,
                 isLoading: true
+            }
+        case ADD_ROW_EMPLOYEE :
+            return {
+                ...state,
+                employees: [...state.employees,payload],
+                isLoading: false
             }
         case UPDATE_EMP_REQUEST :
             return {

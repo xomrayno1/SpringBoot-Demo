@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux'; 
-import {deleteItem, getEmpRequest,updateEmp} from '../redux/actions/empAction'
-import {Table,Button,Space,Popconfirm,Spin,Input, InputNumber,Form } from 'antd'
+import {deleteItem, getEmpRequest,updateEmp,addRowEmp,addEmp} from '../redux/actions/empAction'
+import {Table,Button,Space,Popconfirm,Spin,Input,Form } from 'antd'
  
+
 import 'antd/dist/antd.css';
  
 const EditableCell = ({
@@ -20,19 +21,18 @@ const EditableCell = ({
       <td {...restProps}>
         {editing ? (
           <Form.Item
-            name={dataIndex}
-            style={{
-              margin: 0,
-            }}
-            rules={[
-              {
-                required: true,
-                message: `Please Input ${title}!`,
-              },
-            ]}
-            
-          >
-            <Input />
+                name={dataIndex}
+                style={{
+                margin: 0,
+                }}
+                rules={[
+                {
+                    required: true,
+                    message: `Please Input ${title}!`,
+                },
+                ]}
+            >
+            <Input value=""/>
           </Form.Item>
         ) : (
           children
@@ -42,17 +42,20 @@ const EditableCell = ({
   };
 function EmployeeList(props) {
     const {employees} = useSelector(state => state.employee);
-    let {isLoading} = useSelector(state => state.employee);
+    let   {isLoading} = useSelector(state => state.employee);
     const dispatch = useDispatch();
     const [editingKey, setEditingKey] = useState('');
+ 
 
+     
     const isEditing = (record) => record.id === editingKey;
     const [form] = Form.useForm()
     useEffect(()=>{
         dispatch(getEmpRequest())
     },[])
-   
+    console.log(employees)
     const columns = [
+        
         {
             title : 'Id',
             dataIndex : 'id',
@@ -84,9 +87,9 @@ function EmployeeList(props) {
                             style={{
                             marginRight: 8,
                         }}
-                         onClick={() => saveEdit(record)}
+                         onClick={() => save(record)}
                          >Save</a>
-                        <Popconfirm title="Sure to cancel" onConfirm={ editCancel}>
+                        <Popconfirm title="Sure to cancel" onConfirm={editCancel}>
                             <a href="javascript:;">Cancel</a>
                         </Popconfirm>
                     </span>
@@ -95,7 +98,11 @@ function EmployeeList(props) {
                         <Popconfirm title="Sure to delete ?" onConfirm={() => handleDeleteEmp(record.id) }>
                             <Button key={record.id} type="danger">Delete</Button>
                         </Popconfirm>
-                        <Button disabled={editingKey !== ''} key={record.id} onClick={()=> editRecord(record)} >Edit</Button>
+                        <Button disabled={editingKey !== '' } 
+                                key={record.id} onClick={()=> editRecord(record)} 
+                            >
+                                Edit
+                        </Button>
                     </Space>
                 )
  
@@ -103,25 +110,29 @@ function EmployeeList(props) {
         }
     ]
     function editRecord(record){
+        
         form.setFieldsValue({
-            id: 0, 
-            firstName : '',
-            lastName :'',
-            code : '',
             ...record,
           });
+        
         setEditingKey(record.id);
+          
     }
     function editCancel(){
-        setEditingKey('')
+        setEditingKey('');
+       
     }
     function handleDeleteEmp(id){
         dispatch(deleteItem(id));
     }
-    const saveEdit = async (record) => {
+    const save = async (record) => {
         const row = await form.validateFields();
-        row.id = record.id;
-        dispatch(updateEmp(row))
+        if(record.id){
+            row.id = record.id;
+            dispatch(updateEmp(row))
+        }else{
+            dispatch(addEmp(row));
+        }
         setEditingKey('');
     }
     const mergedColumns = columns.map((col) => {
@@ -132,19 +143,37 @@ function EmployeeList(props) {
           ...col,
           onCell: (record) => ({
             record,
-            dataIndex: col.dataIndex,
+            dataIndex:  col.dataIndex,
             title: col.title,
             editing: isEditing(record),
           }),
         };
       });
+    function handleAdd(){
+        const newData = {
+            id : '',
+            firstName : '',
+            lastName : '',
+            code : ''
+        }
+      //create action add row 
+        dispatch(addRowEmp(newData));
+         
+    }
     return (
         <div className="container">
             <h1>Employee List</h1> 
+            <Button 
+                type="primary"
+                onClick={handleAdd}
+                disabled={editingKey !== ''}
+                >
+                Add
+            </Button>
             <Spin spinning={isLoading}>
                 <Form form={form} component={false}>
                     <Table 
-                    columns={mergedColumns} 
+                    columns={mergedColumns}     
                     components={{body : {
                         cell : EditableCell
                     }}}
