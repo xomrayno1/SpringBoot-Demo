@@ -1,10 +1,11 @@
 import {
-    DELETE_EMP_BY_ID_SUCCESS,
-    DELETE_EMP_BY_ID_FAILED,
+ 
     DELETE_EMP_BY_ID,
     GET_EMP_FAILED,
     GET_EMP_REQUEST,
-    GET_EMP_SUCCESS
+    GET_EMP_SUCCESS,
+    ADD_EMP_REQUEST,
+    UPDATE_EMP_REQUEST
 } from '../../common/Constant'
 
 const initalState = {
@@ -38,16 +39,15 @@ function empReducer(state = initalState, action){
                 ...state,
                 isLoading : true
             }
-        case DELETE_EMP_BY_ID_SUCCESS:
+        case ADD_EMP_REQUEST :
             return {
                 ...state,
-                isLoading : false
+                isLoading: true
             }
-        case DELETE_EMP_BY_ID_FAILED:
+        case UPDATE_EMP_REQUEST :
             return {
                 ...state,
-                isLoading : false,
-                error :message 
+                isLoading: true
             }
         default:
             return state;
