@@ -1,11 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux'; 
 import {deleteItem, getEmpRequest,updateEmp,addRowEmp,addEmp} from '../redux/actions/empAction'
-import {Table,Button,Space,Popconfirm,Spin,Input,Form } from 'antd'
+import {Table,Button,Space,Popconfirm,Spin,Input,Form, message } from 'antd'
  
 
 import 'antd/dist/antd.css';
- 
+
+function validateLength(newValue,min,max){
+  if(!(newValue.length >= min && newValue.length <= max)){
+    throw new Error(`Character ${min} - ${max} !`);
+  }
+}
+
 const EditableCell = ({
     editing,
     dataIndex,
@@ -24,13 +30,45 @@ const EditableCell = ({
                 name={dataIndex}
                 style={{
                 margin: 0,
-                }}
-                rules={[
-                {
-                    required: true,
-                    message: `Please Input ${title}!`,
-                },
+                }} 
+                
+                rules={[{ //field required
+                      required : true,
+                      whitespace : true,
+                      message : `Please Input ${title}`
+                    },
+                    dataIndex !== 'code' && { // field diff code length 4- 12
+                      transform : (value) => {
+                        return value.trim()
+                      },
+                      min: 4,
+                      max : 12,
+                      message: 'Character 4 - 12',
+                      whitespace : true,
+                    },
+                    // validate code
+                    (
+                      dataIndex === 'code' && ({ /// code invalid
+                        validator: async (rule, value) => {
+                          const newValue  = value.trim();
+                          if(newValue === '1755238'){
+                            throw new Error('Code Invalid!');
+                          }
+                        },
+                        validateTrigger : true
+                       },{ /// code incorrect length
+                        transform : (value) => {
+                          return value.trim()
+                        },
+                        min: 8,
+                        max : 16,
+                        message: 'Character 8 - 16',
+                       }
+                      )
+                    ),
+                     
                 ]}
+              
             >
             <Input value=""/>
           </Form.Item>
@@ -45,36 +83,39 @@ function EmployeeList(props) {
     let   {isLoading} = useSelector(state => state.employee);
     const dispatch = useDispatch();
     const [editingKey, setEditingKey] = useState('');
- 
+    const [adding,setAdding] = useState(false);
 
-     
     const isEditing = (record) => record.id === editingKey;
     const [form] = Form.useForm()
+
     useEffect(()=>{
+ 
         dispatch(getEmpRequest())
     },[])
-    console.log(employees)
+ 
     const columns = [
-        
         {
             title : 'Id',
             dataIndex : 'id',
-            key : 'id'
+            key : 'id',
         },{
             title: 'FirstName',
             dataIndex : 'firstName',
             key : 'firstName',
-            editable : true
+            editable : true,
+           
         },{
             title : 'LastName',
             dataIndex : 'lastName',
             key : 'lastName',
-            editable : true
+            editable : true,
+             
         },{
             title : 'Code',
             dataIndex : 'code',
             key : 'code',
-            editable: true
+            editable: true,
+            
         },{
             title : 'Action',
             dataIndex : 'Action',
@@ -110,13 +151,11 @@ function EmployeeList(props) {
         }
     ]
     function editRecord(record){
-        
+        // setFieldsValue sẽ set InitalValue Cho Form
         form.setFieldsValue({
             ...record,
           });
-        
         setEditingKey(record.id);
-          
     }
     function editCancel(){
         setEditingKey('');
@@ -135,7 +174,7 @@ function EmployeeList(props) {
         }
         setEditingKey('');
     }
-    const mergedColumns = columns.map((col) => {
+    const mergedColumns = columns.map((col) => { 
         if (!col.editable) {
           return col;
         }
@@ -143,7 +182,7 @@ function EmployeeList(props) {
           ...col,
           onCell: (record) => ({
             record,
-            dataIndex:  col.dataIndex,
+            dataIndex: col.dataIndex,
             title: col.title,
             editing: isEditing(record),
           }),
@@ -157,9 +196,17 @@ function EmployeeList(props) {
             code : ''
         }
       //create action add row 
-        dispatch(addRowEmp(newData));
-         
+      form.setFieldsValue({
+        id : '',
+        firstName : '',
+        lastName : '',
+        code : ''
+      });
+      dispatch(addRowEmp(newData));
+      setAdding(true)
     }
+     
+    
     return (
         <div className="container">
             <h1>Employee List</h1> 
@@ -171,17 +218,21 @@ function EmployeeList(props) {
                 Add
             </Button>
             <Spin spinning={isLoading}>
-                <Form form={form} component={false}>
+                <Form form={form} component={false}  
+                  // validateTrigger={true} //submit mới xác thực
+                  >   
                     <Table 
-                    columns={mergedColumns}     
-                    components={{body : {
-                        cell : EditableCell
-                    }}}
-                    dataSource={ 
-                        employees && employees.length > 0 ? employees : null
-                    }
-                    size="middle"
-                    />
+                      columns={mergedColumns}     
+                      components={{body : {
+                          cell : EditableCell
+                      }}}
+                      
+                      
+                      dataSource={ 
+                          employees && employees.length > 0 ? employees : null
+                      }
+                        size="middle"
+                    />            
                 </Form>
             </Spin>
         </div>
